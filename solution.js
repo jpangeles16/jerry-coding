@@ -6,6 +6,7 @@
 
 var assert = require('assert');
 
+// Taken from stack overflow to replace a character in a string at a certain index.
 String.prototype.replaceAt = function(index, replacement) {
     return this.substr(0, index) + replacement + this.substr(index + replacement.length);
 }
