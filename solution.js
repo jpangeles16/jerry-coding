@@ -36,8 +36,8 @@ class RangeList {
      * Returns true if r1 is immediately to the right of r2.
      * For example, this returns true if r2 = [1,2] and r1 = [2,3]
      * because those ranges are 'next' to each other.
-     * @param {Array<number>} r1 
-     * @param {Array<number>} r2 
+     * @param {Array<number>} r1 first range
+     * @param {Array<number>} r2 second range
      * @returns {boolean} true if r1 is immediately to the right of r2.
      */
     immediatelyToTheRightOf(r1, r2) {
@@ -45,20 +45,20 @@ class RangeList {
     }
 
     /**
-     * Returns true if r1 is immediately to the left of r2
-     * @param {*} r1 
-     * @param {*} r2 
+     * Returns true if r1 is immediately to the left of r2.
+     * @param {*} r1 first range
+     * @param {*} r2 second range
      */
     immediatelyToTheLeftOf(r1, r2) {
         return r2[0] == r1[1];
     }
 
     /**
-     * Returns true if r1 is completely to the left of r2 and shares no union.
+     * Returns true if r1 is completely to the left of r2 and shares no union with it.
      * @param {Array<number>} r1 - first range
      * @param {Array<number>} r2 - second range
      * @return {boolean} true if r1 is completely to the left of r2 and shares no union.
-     * @raise assertionError if either r1 or r2 are invalid ranges
+     * @raise assertionError if either r1 or r2 are invalid ranges.
      */
     toTheLeftOf(r1, r2) {
         assert("Invalid ranges", this.isValidRange(r1) && this.isValidRange(r2));
@@ -70,7 +70,7 @@ class RangeList {
     }
 
     /**
-     * Returns true if r1 is completely to the right of r2 and shares no union.
+     * Returns true if r1 is completely to the right of r2 and shares no union with it.
      * @param {Array<number>} r1  - first range
      * @param {Array<number>} r2  - second range
      * @return {boolean} true if r1 is completely to the right of r2 and shares no union with it.
@@ -129,7 +129,7 @@ class RangeList {
     }
 
     /**
-     * Returns true iff r1 is a subset of r2.
+     * Returns true if r1 is a subset of r2.
      * @param {Array<number>} r1 first range
      * @param {Array<number>} r2 second range
      */
@@ -172,9 +172,9 @@ class RangeList {
     }
 
     /**
-    * Adds RANGETOADD to our rangeList by inserting RANGETOADD into the correct position.
+    * Adds RANGETOADD to our rangeList by using linear search to
+    * insert RANGETOADD into the correct position.
     * Does nothing if RANGETOADD is invalid.
-    * Runtime: O(n)
     * @param {Array<number>} rangeToAdd - Array of two integers that specify the range to add
     */
     add(rangeToAdd) {
@@ -227,9 +227,9 @@ class RangeList {
     }
 
     /**
-     * Returns true if x is contained within range.
-     * @param {number} x 
-     * @param {Array<number>} range 
+     * Returns true if X is contained within RANGE.
+     * @param {number} x number that we're checking if it's contained in RANGE
+     * @param {Array<number>} range range we're checking 
      */
     isContainedInRange(x, range) {
         if (range[1] - range[0] == 0) {
@@ -266,17 +266,17 @@ class RangeList {
 
     /**
      * Trims our validRanges so that any range contained in
-     * RANGETOREMOVE is deleted.  This algorithm only trims 
+     * RANGETOREMOVE is deleted. This algorithm only trims 
      * from LEFTINDEX to RIGHTINDEX, and decides whether to delete 
      * or split the ranges at LEFTINDEX and RIGHTINDEX 
      * based off of the REMOVE variables.
      * @param {Array<number>} rangeToRemove the range that we want to remove 
-     * @param {boolean} removeBeforeLeftmostRange 
-     * @param {boolean} removeWithinLeftmostRange 
-     * @param {number} leftIndex 
-     * @param {boolean} removeBeforeRightmostRange 
-     * @param {boolean} removeWithinRightmostRange 
-     * @param {number} rightIndex 
+     * @param {boolean} removeBeforeLeftmostRange true if the range we need to delete is before the element at leftIndex
+     * @param {boolean} removeWithinLeftmostRange true if the range we need to delete is within the element at leftIndex
+     * @param {number} leftIndex index containing potentially the leftmost endpoint of the range we need to delete
+     * @param {boolean} removeBeforeRightmostRange true if the range we need to delete is before the element at rightIndex
+     * @param {boolean} removeWithinRightmostRange true if the range we need to delete is within the element at rightIndex
+     * @param {number} rightIndex index containing potentially the rightmost endpoint of the range we need to delete
      */
     trimValidRanges(rangeToRemove, removeBeforeLeftmostRange, removeWithinLeftmostRange, leftIndex, removeBeforeRightmostRange, removeWithinRightmostRange, rightIndex) {
         // Delete or split the leftmost range
@@ -339,7 +339,6 @@ class RangeList {
         if (!this.isValidRange(rangeToRemove)) return;
         if (rangeToRemove[0] == rangeToRemove[1]) return;
 
-        
         let indexOfLeftmostRangeToRemove = 0;
         let removeBeforeLeft = false;
         let removeWithinLeft = false;
@@ -352,8 +351,7 @@ class RangeList {
         } 
 
         let prevRange = this.validRanges[0];
-
-        // This for loop marks the index of the leftmost range we need to remove, and breaks if we've found it
+        // This for loop tries to mark the index of the leftmost range we need to remove, and breaks if we've found it
         for (let i = 1; i < this.validRanges.length; i ++) {
             let currRange = this.validRanges[i];
             let leftOfCurrRange = [prevRange[1], currRange[0]];
@@ -376,34 +374,25 @@ class RangeList {
             prevRange = currRange;
         }
 
-        if (!(removeBeforeLeft || removeWithinLeft)) {
-            console.log("Error in remove!");
-        }
-
-        // Start finding out the last range to delete from here on:
+        // Start to find out the last range to delete from here on:
         let indexOfRightmostRangeToRemove = 0;
         let removeBeforeRight = false;
-        let removeWithinRigh = false;
+        let removeWithinRight = false;
 
         // Check if the range we need to remove includes elements even before our list of valid ranges
         if (rangeToRemove[1] <= this.validRanges[0][0]) {
             removeBeforeRight = true;
         } else if (this.isContainedInRange(rangeToRemove[1], this.validRanges[0])) {
-            removeWithinRigh = true;
+            removeWithinRight = true;
         } 
-        // This is the case where rightMostRange exceeds all of our valid ranges
-        if (!(removeBeforeRight || removeWithinRigh)) {
-            indexOfRightmostRangeToRemove = this.validRanges.length;
-        }
 
         prevRange = this.validRanges[0];
-
         // This for loop marks the index of the leftmost range we need to remove, and breaks if we've found it
         for (let i = 1; i < this.validRanges.length; i ++) {
             let currRange = this.validRanges[i];
             let leftOfCurrRange = [prevRange[1], currRange[0]];
             // We don't need to iterate if we've already found out
-            if (removeBeforeRight || removeWithinRigh) {
+            if (removeBeforeRight || removeWithinRight) {
                 break;
             }
             if (this.isContainedInRange(rangeToRemove[1] - 1, leftOfCurrRange)) {
@@ -413,14 +402,19 @@ class RangeList {
             }
             if (this.isContainedInRange(rangeToRemove[1] - 1, currRange)) {
                 indexOfRightmostRangeToRemove = i;
-                removeWithinRigh = true;
+                removeWithinRight = true;
                 break;
             }
             prevRange = currRange;
         }
+
+        // This is the case where rightMostRange exceeds all of our valid ranges
+        if (!(removeBeforeRight || removeWithinRight)) {
+            indexOfRightmostRangeToRemove = this.validRanges.length;
+        }
         
         this.trimValidRanges(rangeToRemove, removeBeforeLeft, removeWithinLeft,
-            indexOfLeftmostRangeToRemove, removeBeforeRight, removeWithinRigh, indexOfRightmostRangeToRemove);
+            indexOfLeftmostRangeToRemove, removeBeforeRight, removeWithinRight, indexOfRightmostRangeToRemove);
 
     }
 
