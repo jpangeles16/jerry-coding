@@ -34,7 +34,7 @@ class RangeList {
 
     /**
      * Returns true if r1 is immediately to the right of r2.
-     * For example, this returns true if r2 = [1,2] and r1=[2,3]
+     * For example, this returns true if r2 = [1,2] and r1 = [2,3]
      * because those ranges are 'next' to each other.
      * @param {Array<number>} r1 
      * @param {Array<number>} r2 
