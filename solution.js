@@ -184,6 +184,7 @@ class RangeList {
             this.validRanges.push(rangeToAdd);
             return;
         }
+
         // Try to find where I can insert range into validRanges
         const firstValue = rangeToAdd[0];
         const secondValue = rangeToAdd[1];
