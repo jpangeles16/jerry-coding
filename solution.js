@@ -16,8 +16,11 @@ String.prototype.replaceAt = function(index, replacement) {
 */
 class RangeList {
 
+    /**
+     * We will represent all of the valid ranges as an array of arrays.
+     */
     constructor() {
-        this.currentRanges = [];
+        this.validRanges = [];
     }
 
     /**
@@ -29,12 +32,13 @@ class RangeList {
         return range[1] >= range[0]; 
     }
 
-
     /**
      * Returns true if r1 is immediately to the right of r2.
-     * for example, r2 = [1,2] and r1=[2,3]
-     * @param {*} r1 
-     * @param {*} r2 
+     * For example, this returns true if r2 = [1,2] and r1=[2,3]
+     * because those ranges are 'next' to each other.
+     * @param {Array<number>} r1 
+     * @param {Array<number>} r2 
+     * @returns {boolean} true if r1 is immediately to the right of r2.
      */
     immediatelyToTheRightOf(r1, r2) {
         return r2[1] == r1[0];
@@ -50,10 +54,10 @@ class RangeList {
     }
 
     /**
-     * Checks if r1 is completely to the left of r2 and shares no union.
+     * Returns true if r1 is completely to the left of r2 and shares no union.
      * @param {Array<number>} r1 - first range
      * @param {Array<number>} r2 - second range
-     * @return {boolean} true if r1 is completely to the left of r2 and shares no union
+     * @return {boolean} true if r1 is completely to the left of r2 and shares no union.
      * @raise assertionError if either r1 or r2 are invalid ranges
      */
     toTheLeftOf(r1, r2) {
@@ -66,10 +70,10 @@ class RangeList {
     }
 
     /**
-     * Checks if r1 is completely to the right of r2 and shares no union.
+     * Returns true if r1 is completely to the right of r2 and shares no union.
      * @param {Array<number>} r1  - first range
      * @param {Array<number>} r2  - second range
-     * @return {boolean} true if r1 is completely to the left of r2 and shares no union
+     * @return {boolean} true if r1 is completely to the right of r2 and shares no union with it.
      * @raise assertionError if either r1 or r2 are invalid ranges
      */
     toTheRightOf(r1, r2) {
@@ -78,7 +82,7 @@ class RangeList {
     }
 
     /**
-     * Checks if r1 has an intersection of at least 1 number with r2 on r1's leftmost side.
+     * Returns true if r1 has an intersection of at least 1 number with r2 on r1's leftmost side.
      * @param {*} r1 
      * @param {*} r2 
      * @return {boolean} true if r1 has an intersection of at least 1 number
@@ -90,7 +94,7 @@ class RangeList {
     }
 
     /**
-     * Checks if r1 has an intersection of at least 1 number with r2 on r1's rightmost side.
+     * Returns true if r1 has an intersection of at least 1 number with r2 on r1's rightmost side.
      * @param {*} r1 
      * @param {*} r2 
      * @return {boolean} true if r1 has an intersection of at least 1 number
@@ -102,38 +106,71 @@ class RangeList {
     }
 
     /**
-     * Assuming we've just added a range to currentRanges, 
-     * we're going to fix any overlapping elements as a result of combining our array starting
-     * at index
+     * Returns true if NUMBER is completely out of bounds of RANGE
+     * AND is bigger than any number within RANGE.
+     * @param {number} number 
+     * @param {Array<number>} range 
+     * @returns {boolean} true if above.
+     */
+    numberToTheRightOf(number, range) {
+        assert("Invalid ranges", this.isValidRange(range));
+        return number >= range[0] && number >= range[1];
+    }
+
+    /**
+     * Returns true if NUMBER is found within RANGE.
+     * @param {number} number 
+     * @param {Array<number>} range 
+     * @returns true if above.
+     */
+    numberWithinRange(number, range) {
+        assert("Invalid ranges", this.isValidRange(range));
+        return number >= range[0] && number < range[1];
+    }
+
+    /**
+     * Returns true iff r1 is a subset of r2.
+     * @param {Array<number>} r1 first range
+     * @param {Array<number>} r2 second range
+     */
+    isSubsetOf(r1, r2) {
+        return r1[0] >= r2[0] && r1[1] <= r2[1];
+    }
+
+    /**
+     * Checks and fixes any overlapping ranges at INDEX 
+     * from this.validRanges by iteratively deleting and/or
+     * combining ranges.
      * 
      * Example:
-     * currentRanges = [[2,6],[3,7]]
-     * fixCurrentRangeToRightOf(5)
-     * currentRanges = [[2,7]]
-     * @param {number} index 
+     * this.validRanges = [[2,6],[3,7]]
+     * fixCurrentRangeToRightOf(0)
+     * this.validRanges = [[2,7]]
+     * 
+     * The above example fixes our ranges so that none of them are overlapping.
+     * @param {number} startingIndex the index that we are starting with. 
      */
-    fixCurrentRangeToRightOf(index) {
-        let startingRange = this.currentRanges[index];
-        let right = this.currentRanges[index][1];
-        for (let i = index + 1; i < this.currentRanges.length; i ++) {
-            let currRange = this.currentRanges[i];
-            if (right >= currRange[0] && right >= currRange[1]) {
-                this.currentRanges.splice(i, 1);
-                i --;
-            } else if (right <= currRange[1] && right >= currRange[0]) {
+    fixOverlappingRanges(startingIndex) {
+        let startingRange = this.validRanges[startingIndex];
+        let rightMostValue = startingRange[1];
+        let i = startingIndex + 1;
+        if (startingIndex + 1 >= this.validRanges.length) return;
+        while (true) {
+            let currRange = this.validRanges[i];
+            if (this.numberToTheRightOf(rightMostValue, currRange)) { 
+                this.validRanges.splice(i, 1);
+            } else if (this.numberWithinRange(rightMostValue, currRange)) {
                 let newRight = currRange[1];
                 let newLeft = startingRange[0];
-                this.currentRanges.splice(i, 1);
-                i --;
-                this.currentRanges[i] = [newLeft, newRight];
+                this.validRanges.splice(i - 1, 2, [newLeft, newRight]);
+                return;
             } else {
                 return;
             }
-
+            if (i == this.validRanges.length) return;
         }
     }
 
-    
     /**
     * Adds RANGETOADD to our rangeList by inserting RANGETOADD into the correct position.
     * Does nothing if RANGETOADD is invalid.
@@ -141,55 +178,59 @@ class RangeList {
     * @param {Array<number>} rangeToAdd - Array of two integers that specify the range to add
     */
     add(rangeToAdd) {
-         
         if (!this.isValidRange(rangeToAdd)) return;
         if (rangeToAdd[0] == rangeToAdd[1]) return;
-        if (this.currentRanges.length == 0) {
-            this.currentRanges.push(rangeToAdd);
+        if (this.validRanges.length == 0) {
+            this.validRanges.push(rangeToAdd);
             return;
         }
-        // Try to find where I can insert range into currentRanges
+        // Try to find where I can insert range into validRanges
         const firstValue = rangeToAdd[0];
         const secondValue = rangeToAdd[1];
-        let prev = undefined;
-        for (let i = 0; i < this.currentRanges.length; i ++) {
-            let currSubRange = this.currentRanges[i];
-            // Situation where we can add to the left of currSubRange
-            if (prev == undefined && this.toTheLeftOf(rangeToAdd, currSubRange)) {
-                this.currentRanges.splice(i, 0, rangeToAdd);
+        let prevRange = undefined;
+        // This for-loop tries to find the proper spot to insert range into validRanges
+        for (let i = 0; i < this.validRanges.length; i ++) {
+            let currRange = this.validRanges[i];
+            // Unique situation where we can add to the left of currRange
+            if (prevRange == undefined && this.toTheLeftOf(rangeToAdd, currRange)) {
+                this.validRanges.splice(i, 0, rangeToAdd);
                 return;
             }
-            // Check if range is contained in currSubrange
-            if (firstValue >= currSubRange[0] && secondValue <= currSubRange[1]) {
+            // Check if rangeToAdd is contained in currRange, just return
+            if (this.isSubsetOf(rangeToAdd, currRange)) {
                 return;
             }
-            // Check if range is to the rightOfcurrSubRange
-            if (this.hasRightSubset(rangeToAdd, currSubRange) || this.immediatelyToTheRightOf(currSubRange, rangeToAdd)) {
-                let newRange = [firstValue, currSubRange[1]];
-                this.currentRanges[i] = newRange;
-                this.fixCurrentRangeToRightOf(i);
+            // Check if rangeToAdd can be added to the right of currRange.
+            if (this.hasRightSubset(rangeToAdd, currRange) || this.immediatelyToTheRightOf(currRange, rangeToAdd)) {
+                let newRange = [firstValue, currRange[1]];
+                this.validRanges[i] = newRange;
+                this.fixOverlappingRanges(i);
                 return;
             }
-            // Check if range has a left subset
-            if (this.hasLeftSubset(rangeToAdd, currSubRange) || this.immediatelyToTheLeftOf(currSubRange, rangeToAdd)) {
-                let newRange =  [currSubRange[0], secondValue];
-                this.currentRanges[i] = newRange;
-                this.fixCurrentRangeToRightOf(i);
+            // Check if rangeToAdd can be added to the left of currRange
+            if (this.hasLeftSubset(rangeToAdd, currRange) || this.immediatelyToTheLeftOf(currRange, rangeToAdd)) {
+                let newRange =  [currRange[0], secondValue];
+                this.validRanges[i] = newRange;
+                this.fixOverlappingRanges(i);
                 return;
             }
-
-            if (firstValue <= currSubRange[0] && currSubRange[1] <= secondValue) {
-                this.currentRanges[i] = rangeToAdd;
-                this.fixCurrentRangeToRightOf(i);
+            // Check if our rangeToAdd is a superset of currRange
+            if (this.isSubsetOf(currRange, rangeToAdd)) {
+                this.validRanges[i] = rangeToAdd;
+                this.fixOverlappingRanges(i);
                 return;
             }
-            prev = currSubRange;
+            prevRange = currRange;
         }
-
-        this.currentRanges.push(rangeToAdd);
+        // We didn't find a spot, so we should just push our new range.
+        this.validRanges.push(rangeToAdd);
     }
 
-
+    /**
+     * Returns true if x is contained within range.
+     * @param {number} x 
+     * @param {Array<number>} range 
+     */
     isContainedInRange(x, range) {
         if (range[1] - range[0] == 0) {
             return x == range[0];
@@ -198,15 +239,13 @@ class RangeList {
     }
 
     /**
-     * Splits the range based off of number.
-     * Returns a null pointer if we have an invalid input.
-     * Returns an empty array if the entire interval is deleted.
-     * Returns a single array nested within in array if we only chip off the ends of the range
-     * Returns two arrays nested within an array otherwise
-     * Examples:
-     * 11, [10,12) => [10, 11)
-     * @param {*} number 
-     * @param {*} range 
+     * Splits the RANGE based off of NUMBER.
+     * @param {*} number number within range we are trying to delete
+     * @param {*} range range that we are trying to split
+     * @returns {Array<Array<number>>} Returns a null pointer if we have an invalid input.
+     * Returns an empty array if the entire interval is deleted: e.g. [1,2) becomes [] since there's only one integer in the range
+     * Returns a single array nested within in array if we only chip off the ends of the range: e.g. [1,3) becomes [2,3)
+     * Returns two arrays nested within an array otherwise 
      */
     splitRange(number, range) {
         assert(this.isContainedInRange(number, range));
@@ -226,170 +265,177 @@ class RangeList {
     }
 
     /**
+     * Trims our validRanges so that any range contained in
+     * RANGETOREMOVE is deleted.  This algorithm only trims 
+     * from LEFTINDEX to RIGHTINDEX, and decides whether to delete 
+     * or split the ranges at LEFTINDEX and RIGHTINDEX 
+     * based off of the REMOVE variables.
+     * @param {Array<number>} rangeToRemove the range that we want to remove 
+     * @param {boolean} removeBeforeLeftmostRange 
+     * @param {boolean} removeWithinLeftmostRange 
+     * @param {number} leftIndex 
+     * @param {boolean} removeBeforeRightmostRange 
+     * @param {boolean} removeWithinRightmostRange 
+     * @param {number} rightIndex 
+     */
+    trimValidRanges(rangeToRemove, removeBeforeLeftmostRange, removeWithinLeftmostRange, leftIndex, removeBeforeRightmostRange, removeWithinRightmostRange, rightIndex) {
+        // Delete or split the leftmost range
+        if (removeBeforeLeftmostRange) {
+            this.validRanges.splice(leftIndex, 1);
+            rightIndex --;
+        } else if (removeWithinLeftmostRange) {
+            let splitRanges = this.splitRange(rangeToRemove[0], this.validRanges[leftIndex]);
+            // Case where in the process of splitting, we end up deleting the range
+            if (splitRanges.length == 0) {
+                this.validRanges.splice(leftIndex, 1);
+                rightIndex --;
+            } else if (splitRanges.length == 1) {
+                this.validRanges.splice(leftIndex, 1, splitRanges[0]);
+                if (leftIndex == rightIndex) return;
+            } else if (leftIndex == rightIndex) {
+                let rightChippedRanges = this.splitRange(rangeToRemove[1] - 1, this.validRanges[rightIndex]);
+                this.validRanges.splice(leftIndex, 1, splitRanges[0], rightChippedRanges[1]);
+                return;
+            } else { // Case where we split up one of our valid ranges
+                this.validRanges.splice(leftIndex,1,splitRanges[0], splitRanges[1]);
+                rightIndex ++;
+                leftIndex ++;
+            }
+        }
+        // Trim off any ranges that lie between the left and right endpoints
+        while(leftIndex != rightIndex) {
+            this.validRanges.splice(leftIndex, 1);
+            rightIndex --;
+        }
+        // Delete or split the rightmost range
+        if (leftIndex > rightIndex) return; 
+        else if (removeBeforeRightmostRange) return;
+        else if (removeWithinRightmostRange) {
+            let splitRanges = this.splitRange(rangeToRemove[1] - 1, this.validRanges[rightIndex]);
+            if (splitRanges == null) {
+                this.validRanges.splice(rightIndex, 1);
+            } else if (splitRanges.length == 1) {
+                this.validRanges.splice(rightIndex, 1, splitRanges)
+            } else {
+                this.validRanges.splice(rightIndex, 1, splitRanges[0], splitRanges[1]);
+                rightIndex ++;
+            }
+        }
+        // Trim off any ranges that lie between the left and right endpoints
+        while(leftIndex != rightIndex) {
+            this.validRanges.splice(leftIndex, 1);
+            rightIndex --;
+        }
+    }
+
+    /**
     * Description: 
-    * Removes a range from the list.
-    * 
-    * Algorithm:
-    * The approach I took was "marking" our list of valid ranges,
-    * and then once I find the marks, take measures to split or delete
-    * unneccesary ranges.
-    * For example, if I had
-    * [ -20, -19 ), [ 0, 8 ), [ 9, 10 ),
-    * and I had to remove [-20, 2),
-    * then I would have to place markers on 
-    * the first range [-20, -19) and the second range [0, 8), and
-    * would have to delete [-20, -19) and trim the range [0, 8) 
-    * 
-    * Runtime: 
-    * O(n)
-    * 
-    * Parameters:
-    * @param {Array<number>} range - Array of two integers that specify
+    * Iteratively remove a range from the list with linear runtime.
+    * @param {Array<number>} rangeToRemove - Array of two integers that specify
     beginning and end of range.
     */
-    remove(range) {
-        if (this.currentRanges.length == 0) return;
-        if (!this.isValidRange(range)) return;
-        if (range[0] == range[1]) return;
+    remove(rangeToRemove) {
+        if (this.validRanges.length == 0) return;
+        if (!this.isValidRange(rangeToRemove)) return;
+        if (rangeToRemove[0] == rangeToRemove[1]) return;
 
-        let leftRangeToRemoveIndex = 0;
-        let removeBeforeLeftRange = false;
-        let removeWithinLeftRange = false;
+        
+        let indexOfLeftmostRangeToRemove = 0;
+        let removeBeforeLeft = false;
+        let removeWithinLeft = false;
 
-        // Check if first element we need to remove is before the range
-        if (range[0] < this.currentRanges[0][0]) {
-            removeBeforeLeftRange = true;
-        } else if (this.isContainedInRange(range[0], this.currentRanges[0])) {
-            removeWithinLeftRange = true;
+        // Check if the range we need to remove includes elements even before our list of valid ranges
+        if (rangeToRemove[0] < this.validRanges[0][0]) {
+            removeBeforeLeft = true;
+        } else if (this.isContainedInRange(rangeToRemove[0], this.validRanges[0])) {
+            removeWithinLeft = true;
         } 
 
-        let prevRange = this.currentRanges[0];
+        let prevRange = this.validRanges[0];
 
-        // This for loop marks the first range we need to remove, and breaks if we've found it
-        for (let i = 1; i < this.currentRanges.length; i ++) {
-            let currRange = this.currentRanges[i];
-            // We don't need to iterate if we've already found out
-            if (removeBeforeLeftRange || removeWithinLeftRange) {
+        // This for loop marks the index of the leftmost range we need to remove, and breaks if we've found it
+        for (let i = 1; i < this.validRanges.length; i ++) {
+            let currRange = this.validRanges[i];
+            let leftOfCurrRange = [prevRange[1], currRange[0]];
+            // We don't need to iterate if we've already found out the leftmost range
+            if (removeBeforeLeft || removeWithinLeft) {
                 break;
             }
-            if (this.isContainedInRange(range[0], [prevRange[1], currRange[0]])) {
-                leftRangeToRemoveIndex = i;
-                removeBeforeLeftRange = true;
+            // Case range to remove is between the previous range and the current range
+            if (this.isContainedInRange(rangeToRemove[0], leftOfCurrRange)) {
+                indexOfLeftmostRangeToRemove = i;
+                removeBeforeLeft = true;
                 break;
             }
-            if (this.isContainedInRange(range[0], currRange)) {
-                leftRangeToRemoveIndex = i;
-                removeWithinLeftRange = true;
+            // Case where the leftMost range that we have to remove is in a range
+            if (this.isContainedInRange(rangeToRemove[0], currRange)) {
+                indexOfLeftmostRangeToRemove = i;
+                removeWithinLeft = true;
                 break;
             }
             prevRange = currRange;
         }
 
-        // Double check if we have marked our left range
-        if (!(removeBeforeLeftRange || removeWithinLeftRange)) {
+        if (!(removeBeforeLeft || removeWithinLeft)) {
             console.log("Error in remove!");
         }
 
-        let rightRangeToRemoveIndex = 0;
-        let removeBeforeRightRange = false;
-        let removeWithinRightRange = false;
-        // Now, we have to find the right range to remove for the right endpoint
-        if (range[1] <= this.currentRanges[0][0]) {
-            removeBeforeRightRange = true;
-        } else if (this.isContainedInRange(range[1], this.currentRanges[0])) {
-            removeWithinRightRange = true;
-        } 
-            
-        prevRange = this.currentRanges[0];
+        // Start finding out the last range to delete from here on:
+        let indexOfRightmostRangeToRemove = 0;
+        let removeBeforeRight = false;
+        let removeWithinRigh = false;
 
-        for (let i = 1; i < this.currentRanges.length; i ++) {
-            let currRange = this.currentRanges[i];
+        // Check if the range we need to remove includes elements even before our list of valid ranges
+        if (rangeToRemove[1] <= this.validRanges[0][0]) {
+            removeBeforeRight = true;
+        } else if (this.isContainedInRange(rangeToRemove[1], this.validRanges[0])) {
+            removeWithinRigh = true;
+        } 
+        // This is the case where rightMostRange exceeds all of our valid ranges
+        if (!(removeBeforeRight || removeWithinRigh)) {
+            indexOfRightmostRangeToRemove = this.validRanges.length;
+        }
+
+        prevRange = this.validRanges[0];
+
+        // This for loop marks the index of the leftmost range we need to remove, and breaks if we've found it
+        for (let i = 1; i < this.validRanges.length; i ++) {
+            let currRange = this.validRanges[i];
+            let leftOfCurrRange = [prevRange[1], currRange[0]];
             // We don't need to iterate if we've already found out
-            if (removeBeforeRightRange || removeWithinRightRange) {
+            if (removeBeforeRight || removeWithinRigh) {
                 break;
             }
-            if (this.isContainedInRange(range[1] - 1, [prevRange[1], currRange[0]])) {
-                rightRangeToRemoveIndex = i;
-                removeBeforeRightRange = true;
+            if (this.isContainedInRange(rangeToRemove[1] - 1, leftOfCurrRange)) {
+                indexOfRightmostRangeToRemove = i;
+                removeBeforeRight = true;
                 break;
             }
-            if (this.isContainedInRange(range[1] - 1, currRange)) {
-                rightRangeToRemoveIndex = i;
-                removeWithinRightRange = true;
+            if (this.isContainedInRange(rangeToRemove[1] - 1, currRange)) {
+                indexOfRightmostRangeToRemove = i;
+                removeWithinRigh = true;
                 break;
             }
             prevRange = currRange;
         }
-
-        if (!(removeBeforeRightRange || removeWithinRightRange)) {
-            rightRangeToRemoveIndex = this.currentRanges.length;
-        }
-
-        if (removeBeforeLeftRange) {
-            this.currentRanges.splice(leftRangeToRemoveIndex, 1);
-            rightRangeToRemoveIndex --;
-        } else if (removeWithinLeftRange) {
-            let chippedRanges = this.splitRange(range[0], this.currentRanges[leftRangeToRemoveIndex]);
-            if (chippedRanges.length == 0) {
-                this.currentRanges.splice(leftRangeToRemoveIndex, 1);
-                rightRangeToRemoveIndex --;
-            } else if (chippedRanges.length == 1) {
-                this.currentRanges.splice(leftRangeToRemoveIndex,1,chippedRanges[0]);
-                if (leftRangeToRemoveIndex == rightRangeToRemoveIndex) {
-                    return;
-                }
-                // leftRangeToRemoveIndex ++;
-            } else if (leftRangeToRemoveIndex == rightRangeToRemoveIndex) {
-                let rightChippedRanges = this.splitRange(range[1] - 1, this.currentRanges[rightRangeToRemoveIndex]);
-                this.currentRanges.splice(leftRangeToRemoveIndex,1,chippedRanges[0],rightChippedRanges[1]);
-                return;
-            } else { // Case where we split up one of our valid ranges
-                this.currentRanges.splice(leftRangeToRemoveIndex,1,chippedRanges[0], chippedRanges[1]);
-                rightRangeToRemoveIndex ++;
-                leftRangeToRemoveIndex ++;
-            }
-        }
-
-        // Trim off any ranges that lie between the left and right endpoints
-        while(leftRangeToRemoveIndex != rightRangeToRemoveIndex) {
-            this.currentRanges.splice(leftRangeToRemoveIndex, 1);
-            rightRangeToRemoveIndex --;
-        }
-
-        if (leftRangeToRemoveIndex > rightRangeToRemoveIndex) {
-            return;
-        } else if (removeBeforeRightRange) {
-            return;
-        } else if (removeWithinRightRange) {
-            let chippedRanges = this.splitRange(range[1] - 1, this.currentRanges[rightRangeToRemoveIndex]);
-            if (chippedRanges == null) {
-                this.currentRanges.splice(rightRangeToRemoveIndex, 1);
-            } else if (chippedRanges.length == 1) {
-                this.currentRanges.splice(rightRangeToRemoveIndex,1,chippedRanges)
-            } else {
-                this.currentRanges.splice(rightRangeToRemoveIndex,1,chippedRanges[0], chippedRanges[1]);
-                rightRangeToRemoveIndex ++;
-            }
-        }
-
-        // Trim off any ranges that lie between the left and right endpoints
-        while(leftRangeToRemoveIndex != rightRangeToRemoveIndex) {
-            this.currentRanges.splice(leftRangeToRemoveIndex, 1);
-            rightRangeToRemoveIndex --;
-        }
+        
+        this.trimValidRanges(rangeToRemove, removeBeforeLeft, removeWithinLeft,
+            indexOfLeftmostRangeToRemove, removeBeforeRight, removeWithinRigh, indexOfRightmostRangeToRemove);
 
     }
 
-
+    /**
+     * For debugging purposes, returns a stringified version of our range
+     */
     toString() {
-        let newRanges = this.currentRanges.map(e => {
+        let newRanges = this.validRanges.map(e => {
             return `[${e[0]}, ${e[1]})`;
         }); 
         return newRanges.join(" ");
     }
 
     /**
-    * Prints out the toString list of ranges in the range list.
+    * Console logs the toString list of ranges in the range list.
     */
     print() {
         console.log(this.toString());

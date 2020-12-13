@@ -72,7 +72,6 @@ test('second custom test', () => {
     expect(rl.toString()).toBe('[-20, -8) [0, 1) [3, 8) [9, 10)')
     rl.remove([3,4]);
     expect(rl.toString()).toBe('[-20, -8) [0, 1) [4, 8) [9, 10)')
-    debugger;
     rl.remove([0,6]);
     expect(rl.toString()).toBe('[-20, -8) [6, 8) [9, 10)')
     rl.remove([6, 9]);
@@ -95,6 +94,7 @@ test('third custom test', () => {
 });
 
 test('fourth custom test', () => {
+    debugger;
     let rl = new RangeList();
     rl.add([-20, -19]);
     rl.add([9,10]);
@@ -118,42 +118,7 @@ test('basic test', () => {
     let rl = new RangeList();
     rl.remove([-1,1]);
     expect(rl.toString()).toBe('');
-    rl.add
 });
-
-// expect(rl.toString());
-// // Should display: [1, 5)
-// rl.add([10, 20]);
-// rl.print();
-// // Should display: [1, 5) [10, 20)
-// rl.add([20, 20]);
-// rl.print();
-// // Should display: [1, 5) [10, 20)
-// rl.add([20, 21]);
-// rl.print();
-// // Should display: [1, 5) [10, 21)
-// rl.add([2, 4]);
-// rl.print();
-// // Should display: [1, 5) [10, 21)
-// rl.add([3, 8]);
-// rl.print();
-// // Should display: [1, 8) [10, 21)
-// rl.remove([10, 10]);
-// rl.print();
-// // Should display: [1, 8) [10, 21)
-// rl.remove([10, 11]);
-// rl.print();
-// // Should display: [1, 8) [11, 21)
-// rl.remove([15, 17]);
-// rl.print();
-// // Should display: [1, 8) [11, 15) [17, 21)
-// rl.remove([3, 19]);
-// rl.print();
-// // Should display: [1, 3) [19, 21)
-
-
-// Former tests
-// Example run
 
 
 
