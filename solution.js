@@ -328,95 +328,68 @@ class RangeList {
             rightIndex --;
         }
     }
+    
+    numberToTheLeftOf(number, range) {
+        return number < range[0] && number < range[1];
+    }
+
+    numberToTheRightOf(number, range) {
+        return number > range[0] && number >= range[1];
+    }
 
     /**
     * Description: 
     * Iteratively remove a range from the list with linear runtime.
     * @param {Array<number>} rangeToRemove - Array of two integers that specify
-    beginning and end of range.
+    * beginning and end of range.
     */
     remove(rangeToRemove) {
         if (this.validRanges.length == 0) return;
         if (!this.isValidRange(rangeToRemove)) return;
         if (rangeToRemove[0] == rangeToRemove[1]) return;
 
-        let indexOfLeftmostRangeToRemove = 0;
-        let removeBeforeLeft = false;
-        let removeWithinLeft = false;
+        let leftIndex = 0;
+        let splitWithinLeftRange = false;
+        let splitBeforeLeftRange = false;
 
-        // Check if the range we need to remove includes elements even before our list of valid ranges
-        if (rangeToRemove[0] < this.validRanges[0][0]) {
-            removeBeforeLeft = true;
-        } else if (this.isContainedInRange(rangeToRemove[0], this.validRanges[0])) {
-            removeWithinLeft = true;
-        } 
-
-        let prevRange = this.validRanges[0];
-        // This for loop tries to mark the index of the leftmost range we need to remove, and breaks if we've found it
-        for (let i = 1; i < this.validRanges.length; i ++) {
+        let rightIndex = 0;
+        let splitWithinRightRange = false;
+        let splitBeforeRightRange = false;
+        // Find first index of validRanges we need to trim.
+        for (let i = 0; i < this.validRanges.length; i++) {
             let currRange = this.validRanges[i];
-            let leftOfCurrRange = [prevRange[1], currRange[0]];
-            // We don't need to iterate if we've already found out the leftmost range
-            if (removeBeforeLeft || removeWithinLeft) {
+            if (this.numberToTheLeftOf(rangeToRemove[0], currRange)) {
+                leftIndex = i;
+                splitBeforeLeftRange = true;
                 break;
             }
-            // Case range to remove is between the previous range and the current range
-            if (this.isContainedInRange(rangeToRemove[0], leftOfCurrRange)) {
-                indexOfLeftmostRangeToRemove = i;
-                removeBeforeLeft = true;
+            if (this.numberWithinRange(rangeToRemove[0], currRange)) {
+                leftIndex = i;
+                splitWithinLeftRange = true;
                 break;
             }
-            // Case where the leftMost range that we have to remove is in a range
-            if (this.isContainedInRange(rangeToRemove[0], currRange)) {
-                indexOfLeftmostRangeToRemove = i;
-                removeWithinLeft = true;
-                break;
-            }
-            prevRange = currRange;
         }
-
-        // Start to find out the last range to delete from here on:
-        let indexOfRightmostRangeToRemove = 0;
-        let removeBeforeRight = false;
-        let removeWithinRight = false;
-
-        // Check if the range we need to remove includes elements even before our list of valid ranges
-        if (rangeToRemove[1] <= this.validRanges[0][0]) {
-            removeBeforeRight = true;
-        } else if (this.isContainedInRange(rangeToRemove[1], this.validRanges[0])) {
-            removeWithinRight = true;
-        } 
-
-        prevRange = this.validRanges[0];
-        // This for loop marks the index of the leftmost range we need to remove, and breaks if we've found it
-        for (let i = 1; i < this.validRanges.length; i ++) {
-            let currRange = this.validRanges[i];
-            let leftOfCurrRange = [prevRange[1], currRange[0]];
-            // We don't need to iterate if we've already found out
-            if (removeBeforeRight || removeWithinRight) {
-                break;
+        // Find second index of validRanges we need to trim.
+        if (this.numberToTheRightOf(rangeToRemove[1], this.validRanges[this.validRanges.length - 1])) {
+            rightIndex = this.validRanges.length;
+        } else {
+            for (let i = 0; i < this.validRanges.length; i++) {
+                let currRange = this.validRanges[i];
+                if (this.numberToTheLeftOf(rangeToRemove[1] - 1, currRange)) {
+                    rightIndex = i;
+                    splitBeforeRightRange = true;
+                    break;
+                }
+                if (this.numberWithinRange(rangeToRemove[1] - 1, currRange)) {
+                    rightIndex = i;
+                    splitWithinRightRange = true;
+                    break;
+                }
             }
-            if (this.isContainedInRange(rangeToRemove[1] - 1, leftOfCurrRange)) {
-                indexOfRightmostRangeToRemove = i;
-                removeBeforeRight = true;
-                break;
-            }
-            if (this.isContainedInRange(rangeToRemove[1] - 1, currRange)) {
-                indexOfRightmostRangeToRemove = i;
-                removeWithinRight = true;
-                break;
-            }
-            prevRange = currRange;
         }
-
-        // This is the case where rightMostRange exceeds all of our valid ranges
-        if (!(removeBeforeRight || removeWithinRight)) {
-            indexOfRightmostRangeToRemove = this.validRanges.length;
-        }
-        
-        this.trimValidRanges(rangeToRemove, removeBeforeLeft, removeWithinLeft,
-            indexOfLeftmostRangeToRemove, removeBeforeRight, removeWithinRight, indexOfRightmostRangeToRemove);
-
+        // Start trimming
+        this.trimValidRanges(rangeToRemove, splitBeforeLeftRange, 
+            splitWithinLeftRange, leftIndex, splitBeforeRightRange, splitWithinRightRange, rightIndex);
     }
 
     /**
