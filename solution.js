@@ -26,7 +26,7 @@ class RangeList {
     /**
      * Checks if RANGE is valid.
      * @param {Array<number>} range - range to check
-     * @return {undefined} true if range is valid.
+     * @return {boolean} true if range is valid.
      */
     isValidRange(range) {
         return range[1] >= range[0]; 
