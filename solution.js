@@ -138,8 +138,8 @@ class RangeList {
     }
 
     /**
-     * Checks and fixes any overlapping ranges at INDEX 
-     * from this.validRanges by iteratively deleting and/or
+     * Checks and fixes any overlapping ranges starting at INDEX 
+     * in this.validRanges by iteratively deleting and/or
      * combining ranges.
      * 
      * Example:
