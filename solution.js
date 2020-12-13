@@ -15,47 +15,90 @@ String.prototype.replaceAt = function(index, replacement) {
 * NOTE: Feel free to add any extra member variables/functions you like.
 */
 class RangeList {
+
     constructor() {
         this.currentRanges = [];
     }
 
     /**
-     * Checks if leftRange is completely to the left of rightRange
-     * @param {Array<number>} leftRange 
-     * @param {Array<number>} rightRange 
+     * Checks if RANGE is valid.
+     * @param {Array<number>} range - range to check
+     * @return {undefined} true if range is valid.
      */
-    toTheLeftOf(leftRange, rightRange) {
-        return leftRange[0] < rightRange[0] 
-                && leftRange[0] < rightRange[1] 
-                && leftRange[1] < rightRange[0]
-                && leftRange[1] < rightRange[1];
+    isValidRange(range) {
+        return range[1] >= range[0]; 
+    }
+
+
+    /**
+     * Returns true if r1 is immediately to the right of r2.
+     * for example, r2 = [1,2] and r1=[2,3]
+     * @param {*} r1 
+     * @param {*} r2 
+     */
+    immediatelyToTheRightOf(r1, r2) {
+        return r2[1] == r1[0];
     }
 
     /**
-     * Checks if rightRange is completely to the right of LeftRange
-     * @param {Array<number>} rightRange 
-     * @param {Array<number>} leftRange 
+     * Returns true if r1 is immediately to the left of r2
+     * @param {*} r1 
+     * @param {*} r2 
      */
-    toTheRightOf(rightRange, leftRange) {
-        return this.toTheLeftOf(leftRange, rightRange);
+    immediatelyToTheLeftOf(r1, r2) {
+        return r2[0] == r1[1];
     }
 
     /**
-     * Checks if x has a left-most subset with y, and they share a subset together.
-     * Example:
-     * 
-     * x = [2,6]
-     * y = [1,3]
-     * hasLeftSubset(x, y) == True
-     * @param {*} leftRange 
-     * @param {*} rightRange 
+     * Checks if r1 is completely to the left of r2 and shares no union.
+     * @param {Array<number>} r1 - first range
+     * @param {Array<number>} r2 - second range
+     * @return {boolean} true if r1 is completely to the left of r2 and shares no union
+     * @raise assertionError if either r1 or r2 are invalid ranges
      */
-    hasLeftSubset(x, y) {
-        return x[0] >= y[0] && x[0] <= y[1] && x[1] >= y[0] && x[1] >= y[1];
+    toTheLeftOf(r1, r2) {
+        assert("Invalid ranges", this.isValidRange(r1) && this.isValidRange(r2));
+        if (r1[1] == r1[0] || r2[1] == r2[0]) return true;
+        return r1[0] < r2[0] 
+                && r1[0] < r2[1] 
+                && r1[1] <= r2[0]
+                && r1[1] <= r2[1];
     }
 
-    hasRightSubset(x, y) {
-        return this.hasLeftSubset(y, x);
+    /**
+     * Checks if r1 is completely to the right of r2 and shares no union.
+     * @param {Array<number>} r1  - first range
+     * @param {Array<number>} r2  - second range
+     * @return {boolean} true if r1 is completely to the left of r2 and shares no union
+     * @raise assertionError if either r1 or r2 are invalid ranges
+     */
+    toTheRightOf(r1, r2) {
+        assert("Invalid ranges", this.isValidRange(r1) && this.isValidRange(r2));
+        return this.toTheLeftOf(r2, r1);
+    }
+
+    /**
+     * Checks if r1 has an intersection of at least 1 number with r2 on r1's leftmost side.
+     * @param {*} r1 
+     * @param {*} r2 
+     * @return {boolean} true if r1 has an intersection of at least 1 number
+     * @raise assertionError if either r1 or r2 are invalid ranges
+     */
+    hasLeftSubset(r1, r2) {
+        assert("Invalid ranges", this.isValidRange(r1) && this.isValidRange(r2));
+        return r2[0] <= r1[0] && r2[0] < r1[1] && r2[1] - 1 >= r1[0] && r2[1] <=r1[1];
+    }
+
+    /**
+     * Checks if r1 has an intersection of at least 1 number with r2 on r1's rightmost side.
+     * @param {*} r1 
+     * @param {*} r2 
+     * @return {boolean} true if r1 has an intersection of at least 1 number
+     * @raise assertionError if either r1 or r2 are invalid ranges
+     */
+    hasRightSubset(r1, r2) {
+        assert("Invalid ranges", this.isValidRange(r1) && this.isValidRange(r2));
+        return r1[1] > r2[0] && r1[1] - 1 < r2[1] && r1[0] <= r2[0] && r1[0] <= r2[1];
     }
 
     /**
@@ -89,43 +132,46 @@ class RangeList {
 
         }
     }
+
     
     /**
-    * Adds a range to the list
-    * @param {Array<number>} range - Array of two integers that specify
-    * beginning and end of range.
+    * Adds RANGETOADD to our rangeList by inserting RANGETOADD into the correct position.
+    * Does nothing if RANGETOADD is invalid.
+    * Runtime: O(n)
+    * @param {Array<number>} rangeToAdd - Array of two integers that specify the range to add
     */
-    add(range) {
+    add(rangeToAdd) {
+         
+        if (!this.isValidRange(rangeToAdd)) return;
+        if (rangeToAdd[0] == rangeToAdd[1]) return;
         if (this.currentRanges.length == 0) {
-            this.currentRanges.push(range);
+            this.currentRanges.push(rangeToAdd);
             return;
         }
         // Try to find where I can insert range into currentRanges
-        const firstValue = range[0];
-        const secondValue = range[1];
+        const firstValue = rangeToAdd[0];
+        const secondValue = rangeToAdd[1];
         let prev = undefined;
         for (let i = 0; i < this.currentRanges.length; i ++) {
             let currSubRange = this.currentRanges[i];
             // Situation where we can add to the left of currSubRange
-            if (prev == undefined && this.toTheLeftOf(range, currSubRange)) {
-                this.currentRanges.splice(i, 0, range);
+            if (prev == undefined && this.toTheLeftOf(rangeToAdd, currSubRange)) {
+                this.currentRanges.splice(i, 0, rangeToAdd);
                 return;
             }
-         
             // Check if range is contained in currSubrange
             if (firstValue >= currSubRange[0] && secondValue <= currSubRange[1]) {
                 return;
             }
-
             // Check if range is to the rightOfcurrSubRange
-            if (this.hasRightSubset(range, currSubRange)) {
+            if (this.hasRightSubset(rangeToAdd, currSubRange) || this.immediatelyToTheRightOf(currSubRange, rangeToAdd)) {
                 let newRange = [firstValue, currSubRange[1]];
                 this.currentRanges[i] = newRange;
                 this.fixCurrentRangeToRightOf(i);
                 return;
             }
             // Check if range has a left subset
-            if (this.hasLeftSubset(range, currSubRange)) {
+            if (this.hasLeftSubset(rangeToAdd, currSubRange) || this.immediatelyToTheLeftOf(currSubRange, rangeToAdd)) {
                 let newRange =  [currSubRange[0], secondValue];
                 this.currentRanges[i] = newRange;
                 this.fixCurrentRangeToRightOf(i);
@@ -133,13 +179,14 @@ class RangeList {
             }
 
             if (firstValue <= currSubRange[0] && currSubRange[1] <= secondValue) {
-                this.currentRanges[i] = range;
+                this.currentRanges[i] = rangeToAdd;
                 this.fixCurrentRangeToRightOf(i);
                 return;
             }
             prev = currSubRange;
         }
-        this.currentRanges.push(range);
+
+        this.currentRanges.push(rangeToAdd);
     }
 
 
@@ -201,8 +248,8 @@ class RangeList {
     beginning and end of range.
     */
     remove(range) {
-
         if (this.currentRanges.length == 0) return;
+        if (!this.isValidRange(range)) return;
         if (range[0] == range[1]) return;
 
         let leftRangeToRemoveIndex = 0;
@@ -291,7 +338,7 @@ class RangeList {
                 if (leftRangeToRemoveIndex == rightRangeToRemoveIndex) {
                     return;
                 }
-                leftRangeToRemoveIndex ++;
+                // leftRangeToRemoveIndex ++;
             } else if (leftRangeToRemoveIndex == rightRangeToRemoveIndex) {
                 let rightChippedRanges = this.splitRange(range[1] - 1, this.currentRanges[rightRangeToRemoveIndex]);
                 this.currentRanges.splice(leftRangeToRemoveIndex,1,chippedRanges[0],rightChippedRanges[1]);
@@ -314,7 +361,7 @@ class RangeList {
         } else if (removeBeforeRightRange) {
             return;
         } else if (removeWithinRightRange) {
-            let chippedRanges = this.splitRange(range[1], this.currentRanges[rightRangeToRemoveIndex]);
+            let chippedRanges = this.splitRange(range[1] - 1, this.currentRanges[rightRangeToRemoveIndex]);
             if (chippedRanges == null) {
                 this.currentRanges.splice(rightRangeToRemoveIndex, 1);
             } else if (chippedRanges.length == 1) {
@@ -332,72 +379,22 @@ class RangeList {
         }
 
     }
-    /**
-    * Prints out the list of ranges in the range list
-    */
-    print() {
+
+
+    toString() {
         let newRanges = this.currentRanges.map(e => {
             return `[${e[0]}, ${e[1]})`;
-        });
-        console.log(newRanges.join(" "));
+        }); 
+        return newRanges.join(" ");
+    }
+
+    /**
+    * Prints out the toString list of ranges in the range list.
+    */
+    print() {
+        console.log(this.toString());
     }
 }
 
 module.exports = RangeList;
 // My tests
-let rl = new RangeList();
-console.log(rl.toTheLeftOf([2,2], [3,4]));
-console.log(rl);
-rl.add([-20, -19]);
-rl.add([3,4]);
-rl.add([5,6]);
-rl.add([7,8]);
-rl.add([9,10]);
-console.log(rl);
-rl.add([0,7]);
-rl.add([-19, -6]);
-console.log(rl);
-rl.remove([-8,-1]);
-console.log(rl);
-rl.remove([1,3]);
-console.log(rl);
-rl.remove([3,4]);
-console.log(rl);
-rl.remove([0,6]);
-console.log(rl);
-rl.remove([6, 9]);
-console.log(rl.print());
-
-// Former tests
-// Example run
-rl = new RangeList();
-rl.add([1, 5]);
-rl.print();
-// Should display: [1, 5)
-rl.add([10, 20]);
-rl.print();
-// Should display: [1, 5) [10, 20)
-rl.add([20, 20]);
-rl.print();
-// Should display: [1, 5) [10, 20)
-rl.add([20, 21]);
-rl.print();
-// Should display: [1, 5) [10, 21)
-rl.add([2, 4]);
-rl.print();
-// Should display: [1, 5) [10, 21)
-rl.add([3, 8]);
-rl.print();
-// Should display: [1, 8) [10, 21)
-rl.remove([10, 10]);
-rl.print();
-// Should display: [1, 8) [10, 21)
-rl.remove([10, 11]);
-rl.print();
-// Should display: [1, 8) [11, 21)
-rl.remove([15, 17]);
-rl.print();
-// Should display: [1, 8) [11, 15) [17, 21)
-rl.remove([3, 19]);
-rl.print();
-// Should display: [1, 3) [19, 21)
